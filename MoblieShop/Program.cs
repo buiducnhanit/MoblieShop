@@ -26,7 +26,15 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // Configure database
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+{
+    // Retry tối đa 5 lần, mỗi lần chờ ngẫu nhiên trong 1-10 giây
+    sqlOptions.EnableRetryOnFailure(
+        maxRetryCount: 5,
+        maxRetryDelay: TimeSpan.FromSeconds(10),
+        errorNumbersToAdd: null
+    );
+}));
 
 // Configure Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()

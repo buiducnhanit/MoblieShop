@@ -396,7 +396,6 @@ yarn.lock
 Thumbs.db
 
 # Các file publish
-wwwroot/
 dist/
 publish/
 
