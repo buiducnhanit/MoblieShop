@@ -375,9 +375,6 @@ obj/
 *.sln.docstates
 
 # ASP.NET Core secrets & cấu hình sensitive
-appsettings.Development.json
-appsettings.Staging.json
-appsettings.Production.json
 secrets.json
 
 # Các file log, debug
