@@ -1,5 +1,5 @@
-﻿@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
-@model WebDoDienTu.Models.Product
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@model MoblieShop.Models.Product
 
 @{
     ViewData["Title"] = "Details";
@@ -306,4 +306,4 @@
 
 <script src="~/js/rating.js"></script>
 
-@await Html.PartialAsync("_RelatedProductsPartial", ViewBag.RecommendedProducts as List<WebDoDienTu.Models.Product>)
+@await Html.PartialAsync("_RelatedProductsPartial", ViewBag.RecommendedProducts as List<MoblieShop.Models.Product>)

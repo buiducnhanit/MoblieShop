@@ -1,12 +1,12 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using WebDoDienTu.Models;
-using WebDoDienTu.Service;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Models;
+using MoblieShop.Service;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Areas.Admin.Controllers
+namespace MoblieShop.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize(Roles = SD.Role_Admin)]

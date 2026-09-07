@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using WebDoDienTu.Models;
+using MoblieShop.Models;
 using Microsoft.AspNetCore.Authorization;
-using WebDoDienTu.Repository;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     [Authorize]
     public class CommentsController : Controller

@@ -1,7 +1,7 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace WebDoDienTu.Models
+namespace MoblieShop.Models
 {
     public class PostCategory
     {

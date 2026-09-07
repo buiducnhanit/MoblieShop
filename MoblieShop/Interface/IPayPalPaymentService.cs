@@ -1,6 +1,6 @@
-﻿using PayPal.Api;
+using PayPal.Api;
 
-namespace WebDoDienTu.Service.PayPal
+namespace MoblieShop.Interface
 {
     public interface IPayPalPaymentService
     {

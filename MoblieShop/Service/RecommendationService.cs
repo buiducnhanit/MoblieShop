@@ -1,35 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.ML;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Models;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Service
 {
     public class RecommendationService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IRecommendationRepository _recommendationRepository;
         private readonly MLContext _mlContext;
 
-        public RecommendationService(ApplicationDbContext context)
+        public RecommendationService(IRecommendationRepository recommendationRepository)
         {
-            _context = context;
+            _recommendationRepository = recommendationRepository;
             _mlContext = new MLContext();
         }
 
         // Phương thức để lấy gợi ý sản phẩm cho người dùng
         public async Task<List<ProductRecommendationModel>> GetProductRecommendations(string userId)
         {
-            var orders = await _context.OrderDetails
-                .Where(od => od.Order.UserId == userId)
-                .GroupBy(od => od.ProductId)
-                .Select(g => new { ProductId = g.Key, PurchaseCount = g.Sum(od => od.Quantity) })
-                .ToListAsync();
+            var orders = await _recommendationRepository.GetOrderDataAsync(userId);
 
-            var views = await _context.ProductViews
-                .Where(pv => pv.UserId == userId)
-                .GroupBy(pv => pv.ProductId)
-                .Select(g => new { ProductId = g.Key, ViewCount = g.Sum(pv => pv.ViewCount) })
-                .ToListAsync();
+            var views = await _recommendationRepository.GetViewDataAsync(userId);
 
             var recommendations = new List<ProductRecommendationModel>();
 
@@ -37,7 +28,7 @@ namespace WebDoDienTu.Service
             foreach (var order in orders)
             {
                 var view = views.FirstOrDefault(v => v.ProductId == order.ProductId);
-                var product = await _context.Products.FindAsync(order.ProductId);
+                var product = await _recommendationRepository.GetProductByIdAsync(order.ProductId);
 
                 recommendations.Add(new ProductRecommendationModel
                 {
@@ -56,7 +47,7 @@ namespace WebDoDienTu.Service
             {
                 if (!recommendations.Any(r => r.ProductId == view.ProductId))
                 {
-                    var product = await _context.Products.FindAsync(view.ProductId);
+                    var product = await _recommendationRepository.GetProductByIdAsync(view.ProductId);
 
                     recommendations.Add(new ProductRecommendationModel
                     {
@@ -114,7 +105,7 @@ namespace WebDoDienTu.Service
             var predictionEngine = _mlContext.Model.CreatePredictionEngine<ProductRecommendationInput, ProductRecommendationInput>(model);
 
             var userKey = Convert.ToUInt32(userId.GetHashCode() & 0x7FFFFFFF);
-            var allProductIds = _context.Products.Select(p => (uint)p.ProductId).ToList();
+            var allProductIds = _recommendationRepository.GetAllProductIds();
             var recommendations = new List<ProductRecommendationModel>();
 
             foreach (var productId in allProductIds)
@@ -124,7 +115,7 @@ namespace WebDoDienTu.Service
                     UserId = userKey,
                     ProductId = productId
                 });
-                var p = _context.Products.FirstOrDefault(p => p.ProductId == productId);
+                var p = _recommendationRepository.GetProductById((int)productId);
                 recommendations.Add(new ProductRecommendationModel
                 {
                     ProductId = (int)productId,

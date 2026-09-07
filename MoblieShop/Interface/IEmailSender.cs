@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.MailKit
+namespace MoblieShop.Interface
 {
     public interface IEmailSender
     {

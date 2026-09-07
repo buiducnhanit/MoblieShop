@@ -1,7 +1,7 @@
-﻿using WebDoDienTu.Models;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Service.ProductRecommendation
-{ 
+namespace MoblieShop.Interface
+{
     public interface IProductRecommendationService
     {
         List<Product> GetRecommendedProducts(int productId);

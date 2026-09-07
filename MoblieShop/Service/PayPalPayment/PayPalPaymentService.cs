@@ -1,7 +1,7 @@
-﻿using PayPal.Api;
+using PayPal.Api;
 using System.Globalization;
 
-namespace WebDoDienTu.Service.PayPal
+namespace MoblieShop.Service.PayPal
 {
     public class PayPalPaymentService : IPayPalPaymentService
     {

@@ -1,11 +1,11 @@
-﻿using CloudinaryDotNet.Actions;
+using CloudinaryDotNet.Actions;
 using CloudinaryDotNet;
-using WebDoDienTu.Models;
-using WebDoDienTu.Repository;
+using MoblieShop.Models;
+using MoblieShop.Repository;
 using AutoMapper;
-using WebDoDienTu.ViewModels;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Service
 {
     public class ProductService : IProductService
     {

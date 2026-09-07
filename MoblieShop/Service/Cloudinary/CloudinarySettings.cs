@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.Cloudinary
+namespace MoblieShop.Service.Cloudinary
 {
     public class CloudinarySettings
     {

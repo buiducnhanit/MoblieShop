@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.MailKit
+namespace MoblieShop.Service.MailKit
 {
     public class EmailSettings
     {

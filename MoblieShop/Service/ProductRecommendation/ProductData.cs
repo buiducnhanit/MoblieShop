@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.ProductRecommendation
+namespace MoblieShop.Service.ProductRecommendation
 {
     public class ProductData
     {

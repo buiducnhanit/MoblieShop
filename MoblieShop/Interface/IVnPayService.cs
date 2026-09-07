@@ -1,6 +1,6 @@
-﻿using WebDoDienTu.ViewModels;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Service.VNPayPayment
+namespace MoblieShop.Interface
 {
     public interface IVnPayService
     {

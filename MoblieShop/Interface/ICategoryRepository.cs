@@ -1,6 +1,6 @@
-﻿using WebDoDienTu.Models;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Repository
+namespace MoblieShop.Interface
 {
     public interface ICategoryRepository
     {

@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service
+namespace MoblieShop.Interface
 {
     public interface IProductViewService
     {

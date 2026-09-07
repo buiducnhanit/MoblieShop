@@ -198,6 +198,17 @@ PublishScripts/
 *.snupkg
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.development.example
+!.env.staging.example
+!.env.production.example
+secrets.json
+*.pfx
+*.pem
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
 # Uncomment if necessary however generally it will be regenerated when needed

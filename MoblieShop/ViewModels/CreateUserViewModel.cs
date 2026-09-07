@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace WebDoDienTu.ViewModels
+namespace MoblieShop.ViewModels
 {
     public class CreateUserViewModel
     {

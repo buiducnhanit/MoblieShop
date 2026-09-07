@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Models;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Data
+namespace MoblieShop.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {

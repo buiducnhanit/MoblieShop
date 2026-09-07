@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using WebDoDienTu.Models;
-using WebDoDienTu.Service.ChatBot;
+using MoblieShop.Models;
+using MoblieShop.Service.ChatBot;
 
-namespace WebDoDienTu.Areas.Admin.Controllers
+namespace MoblieShop.Areas.Admin.Controllers
 {
     public class ChatBotController : Controller
     {

@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.Text.Json;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Data;
+using MoblieShop.Models;
 
 
-namespace WebDoDienTu.Areas.Admin.Controllers
+namespace MoblieShop.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize(Roles = SD.Role_Admin)]
@@ -121,7 +121,7 @@ namespace WebDoDienTu.Areas.Admin.Controllers
                 var worksheet = package.Workbook.Worksheets.Add("RevenueByMonth");
 
                 // Add logo
-                var logoPath = "E:\\DO AN CO SO\\WebDoDienTu\\WebDoDienTu\\wwwroot\\image\\mau-logo-dep.jpg"; // Replace with the actual path to your logo image
+                var logoPath = "E:\\DO AN CO SO\\MoblieShop\\MoblieShop\\wwwroot\\image\\mau-logo-dep.jpg"; // Replace with the actual path to your logo image
                 var logo = new FileInfo(logoPath);
 
                 if (logo.Exists)

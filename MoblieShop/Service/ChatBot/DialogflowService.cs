@@ -1,6 +1,6 @@
-﻿using Google.Cloud.Dialogflow.V2;
+using Google.Cloud.Dialogflow.V2;
 
-namespace WebDoDienTu.Service.ChatBot
+namespace MoblieShop.Service.ChatBot
 {
     public class DialogflowService
     {

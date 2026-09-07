@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using WebDoDienTu.Data;
-using WebDoDienTu.Extensions;
-using WebDoDienTu.Models;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Data;
+using MoblieShop.Extensions;
+using MoblieShop.Models;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     [Authorize]
     public class WishlistController : Controller

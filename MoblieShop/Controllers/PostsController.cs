@@ -1,13 +1,13 @@
-﻿using Markdig;
+using Markdig;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
-using WebDoDienTu.Hubs;
-using WebDoDienTu.Repository;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Hubs;
+using MoblieShop.Repository;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     public class PostsController : Controller
     {

@@ -1,4 +1,4 @@
-﻿@model IEnumerable<WebDoDienTu.Models.OrderComplaint>
+@model IEnumerable<MoblieShop.Models.OrderComplaint>
 
 @{
     ViewData["Title"] = "ComplaintList";
@@ -65,9 +65,9 @@
                                         <form asp-action="ResolveComplaint" method="post">
                                             <input type="hidden" name="id" value="@item.Id" />
                                             <select name="orderComplaintStatus" class="form-control" onchange="this.form.submit()">
-                                                @foreach (var status in Enum.GetValues(typeof(WebDoDienTu.Models.OrderComplaintStatus)))
+                                                @foreach (var status in Enum.GetValues(typeof(MoblieShop.Models.OrderComplaintStatus)))
                                                 {
-                                                    if (item.Status == (WebDoDienTu.Models.OrderComplaintStatus)status)
+                                                    if (item.Status == (MoblieShop.Models.OrderComplaintStatus)status)
                                                     {
                                                         <option value="@status" selected>@status</option>
                                                     }

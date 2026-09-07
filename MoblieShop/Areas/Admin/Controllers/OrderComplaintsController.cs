@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
-using WebDoDienTu.Service.MailKit;
+using MoblieShop.Data;
+using MoblieShop.Models;
+using MoblieShop.Service.MailKit;
 
-namespace WebDoDienTu.Areas.Admin.Controllers
+namespace MoblieShop.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize(Roles = SD.Role_Admin)]

@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebDoDienTu.Models;
+using Microsoft.AspNetCore.Mvc;
+using MoblieShop.Models;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
-using WebDoDienTu.Repository;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Areas.Admin.Controllers
+namespace MoblieShop.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [Authorize(Roles = SD.Role_Admin)]

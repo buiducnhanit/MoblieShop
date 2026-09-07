@@ -1,18 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using WebDoDienTu.Data;
-using WebDoDienTu.Extensions;
-using WebDoDienTu.Models;
-using WebDoDienTu.Service;
-using WebDoDienTu.Service.ProductRecommendation;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Data;
+using MoblieShop.Extensions;
+using MoblieShop.Models;
+using MoblieShop.Service;
+using MoblieShop.Service.ProductRecommendation;
+using MoblieShop.ViewModels;
 using X.PagedList;
 using X.PagedList.Extensions;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     public class ProductController : Controller
     {

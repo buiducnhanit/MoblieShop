@@ -1,7 +1,7 @@
-﻿using WebDoDienTu.Models;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Models;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Interface
 {
     public interface IProductService
     {

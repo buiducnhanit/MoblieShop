@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
-using WebDoDienTu.Models;
+using Microsoft.AspNetCore.Identity;
+using MoblieShop.Models;
 
 namespace MoblieShop.Data
 {

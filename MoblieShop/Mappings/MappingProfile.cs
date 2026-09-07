@@ -1,8 +1,8 @@
-﻿using AutoMapper;
-using WebDoDienTu.Models;
-using WebDoDienTu.ViewModels;
+using AutoMapper;
+using MoblieShop.Models;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Mappings
+namespace MoblieShop.Mappings
 {
     public class MappingProfile : Profile
     {

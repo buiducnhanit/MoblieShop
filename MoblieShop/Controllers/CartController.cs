@@ -1,21 +1,21 @@
-﻿using Hangfire;
+using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Security.Claims;
-using WebDoDienTu.Data;
-using WebDoDienTu.Extensions;
-using WebDoDienTu.Models;
-using WebDoDienTu.Repository;
-using WebDoDienTu.Service.MailKit;
-using WebDoDienTu.Service.MomoPayment;
-using WebDoDienTu.Service.PayPal;
-using WebDoDienTu.Service.VNPayPayment;
-using WebDoDienTu.ViewModels;
+using MoblieShop.Data;
+using MoblieShop.Extensions;
+using MoblieShop.Models;
+using MoblieShop.Repository;
+using MoblieShop.Service.MailKit;
+using MoblieShop.Service.MomoPayment;
+using MoblieShop.Service.PayPal;
+using MoblieShop.Service.VNPayPayment;
+using MoblieShop.ViewModels;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     [Authorize]
     public class CartController : Controller

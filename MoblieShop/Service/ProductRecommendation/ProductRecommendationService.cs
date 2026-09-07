@@ -1,27 +1,27 @@
-﻿using Microsoft.ML;
+using Microsoft.ML;
 using Microsoft.ML.Data;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Models;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Service.ProductRecommendation
+namespace MoblieShop.Service.ProductRecommendation
 {
     public class ProductRecommendationService
     {
         private readonly MLContext _mlContext;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IProductRecommendationRepository _productRecommendationRepository;
         private IDataView _productDataView;
         private List<Product> _products;
 
-        public ProductRecommendationService(ApplicationDbContext dbContext)
+        public ProductRecommendationService(IProductRecommendationRepository productRecommendationRepository)
         {
             _mlContext = new MLContext();
-            _dbContext = dbContext;
+            _productRecommendationRepository = productRecommendationRepository;
             LoadProductData();
         }
 
         private void LoadProductData()
         {
-            _products = _dbContext.Products.ToList();
+            _products = _productRecommendationRepository.GetAllProducts();
 
             // Tạo DataView từ danh sách sản phẩm
             _productDataView = _mlContext.Data.LoadFromEnumerable(

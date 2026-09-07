@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using Microsoft.EntityFrameworkCore;
+using MoblieShop.Data;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Repository
+namespace MoblieShop.Repository
 {
     public class ProductRepository : IProductRepository
     {

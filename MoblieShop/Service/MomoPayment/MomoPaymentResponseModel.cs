@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.MomoPayment
+namespace MoblieShop.Service.MomoPayment
 {
     public class MomoPaymentResponseModel
     {

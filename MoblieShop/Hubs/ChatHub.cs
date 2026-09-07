@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Data;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Hubs
+namespace MoblieShop.Hubs
 {
     public class ChatHub : Hub
     {

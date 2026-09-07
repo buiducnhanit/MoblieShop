@@ -1,21 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Models;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Service
 {
     public class OrderService : IOrderService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IOrderRepository _orderRepository;
 
-        public OrderService(ApplicationDbContext context)
+        public OrderService(IOrderRepository orderRepository)
         {
-            _context = context;
+            _orderRepository = orderRepository;
         }
 
         public async Task<List<Order>> GetOrdersByUserIdAsync(string userId)
         {
-            return await _context.Orders.Where(o => o.UserId == userId).ToListAsync();
+            return await _orderRepository.GetOrdersByUserIdAsync(userId);
         }
     }
 }

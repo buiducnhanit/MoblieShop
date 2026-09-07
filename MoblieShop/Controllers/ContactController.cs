@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using Microsoft.AspNetCore.Mvc;
+using MoblieShop.Data;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     public class ContactController : Controller
     {

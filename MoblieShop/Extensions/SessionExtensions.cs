@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
-namespace WebDoDienTu.Extensions
+namespace MoblieShop.Extensions
 {
     public static class SessionExtensions
     {

@@ -1,4 +1,6 @@
-﻿namespace WebDoDienTu.Service.MomoPayment
+using MoblieShop.Service.MomoPayment;
+
+namespace MoblieShop.Interface
 {
     public interface IMomoPaymentService
     {

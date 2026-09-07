@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
-namespace WebDoDienTu.Hubs
+namespace MoblieShop.Hubs
 {
     public class PostHub : Hub
     {

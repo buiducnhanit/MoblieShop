@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebDoDienTu.Repository;
+using Microsoft.AspNetCore.Mvc;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     public class HomeController : Controller
     {

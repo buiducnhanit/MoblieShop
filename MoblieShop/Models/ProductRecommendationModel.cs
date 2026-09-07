@@ -1,6 +1,6 @@
-﻿using Microsoft.ML.Data;
+using Microsoft.ML.Data;
 
-namespace WebDoDienTu.Models
+namespace MoblieShop.Models
 {
     public class ProductRecommendationModel
     {

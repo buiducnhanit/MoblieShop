@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace WebDoDienTu.Migrations
+namespace MoblieShop.Migrations
 {
     /// <inheritdoc />
     public partial class AddActionPost : Migration

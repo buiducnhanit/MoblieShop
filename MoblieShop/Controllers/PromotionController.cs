@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WebDoDienTu.Data;
+using Microsoft.AspNetCore.Mvc;
+using MoblieShop.Data;
 
-namespace WebDoDienTu.Controllers
+namespace MoblieShop.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

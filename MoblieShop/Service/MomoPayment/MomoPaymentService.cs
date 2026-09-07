@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using RestSharp;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace WebDoDienTu.Service.MomoPayment
+namespace MoblieShop.Service.MomoPayment
 {
     public class MomoPaymentService : IMomoPaymentService
     {

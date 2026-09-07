@@ -1,65 +1,158 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - mobile-shop
+name: CI/CD MobileShop
 
 on:
+  pull_request:
+    branches:
+      - dev
+      - stag
+      - master
   push:
     branches:
-      - master
+      - dev
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      promote_to:
+        description: 'Environment to promote the existing image to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      source_tag:
+        description: 'Existing GHCR tag to promote (for example sha-<commit> or stag)'
+        required: true
+        type: string
+
+env:
+  DOTNET_VERSION: 8.x
+  PROJECT_PATH: MoblieShop/MoblieShop.csproj
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
-  build:
-    runs-on: windows-latest
+  ci:
+    name: Build and test
+    runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore "${{ env.PROJECT_PATH }}"
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+      - name: Build
+        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release --no-restore
 
-      - name: Upload artifact for deployment job
+      - name: Test
+        run: dotnet test "${{ env.PROJECT_PATH }}" --configuration Release --no-build --no-restore
+
+      - name: Publish application
+        run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish --no-restore
+
+      - name: Upload publish artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: mobileshop-publish-${{ github.sha }}
+          path: publish
+          if-no-files-found: error
 
-  deploy:
-    runs-on: windows-latest
-    needs: build
+  build-dev-artifact:
+    name: Build immutable dev artifact
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: ci
+    runs-on: ubuntu-latest
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      contents: read
+      packages: write
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: .net-app
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FBA59E5A1217412099B3C0C3DC22FE17 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B58AD60D523A4FB2A1DBC6C00C3820FA }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8890729A3E0542ABBF9E8F68D8F6DFA1 }}
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          app-name: 'mobile-shop'
-          slot-name: 'Production'
-          package: .
-          
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push immutable image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./MoblieShop
+          file: ./MoblieShop/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:dev
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+
+  promote-staging:
+    name: Promote exact artifact to staging
+    if: github.event_name == 'workflow_dispatch' && inputs.promote_to == 'staging'
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote image without rebuilding
+        shell: bash
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          source_image="${IMAGE_NAME}:${SOURCE_TAG}"
+          docker pull "$source_image"
+          docker tag "$source_image" "${IMAGE_NAME}:stag"
+          docker push "${IMAGE_NAME}:stag"
+
+  promote-production:
+    name: Promote exact staging artifact to production
+    if: github.event_name == 'workflow_dispatch' && inputs.promote_to == 'production'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote staging image without rebuilding
+        shell: bash
+        env:
+          SOURCE_TAG: ${{ inputs.source_tag }}
+        run: |
+          set -euo pipefail
+          source_image="${IMAGE_NAME}:${SOURCE_TAG}"
+          docker pull "$source_image"
+          docker tag "$source_image" "${IMAGE_NAME}:prod"
+          docker tag "$source_image" "${IMAGE_NAME}:latest"
+          docker push "${IMAGE_NAME}:prod"
+          docker push "${IMAGE_NAME}:latest"

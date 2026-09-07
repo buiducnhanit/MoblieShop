@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using WebDoDienTu.Data;
-using WebDoDienTu.Models;
+using MoblieShop.Data;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Repository
+namespace MoblieShop.Repository
 {
     public class PostRepository : IPostRepository
     {

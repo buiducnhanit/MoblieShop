@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Service.PayPalPayment
+namespace MoblieShop.Service.PayPalPayment
 {
     public class PayPalPaymentResponse
     {

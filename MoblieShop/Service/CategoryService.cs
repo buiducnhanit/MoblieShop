@@ -1,7 +1,7 @@
-﻿using WebDoDienTu.Models;
-using WebDoDienTu.Repository;
+using MoblieShop.Models;
+using MoblieShop.Repository;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Service
 {
     public class CategoryService : ICategoryService
     {

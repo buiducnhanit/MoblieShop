@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.Models
+namespace MoblieShop.Models
 {
     public class ChatBotMessage
     {

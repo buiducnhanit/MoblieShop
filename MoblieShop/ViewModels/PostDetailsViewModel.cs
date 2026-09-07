@@ -1,6 +1,6 @@
-﻿using WebDoDienTu.Models;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.ViewModels
+namespace MoblieShop.ViewModels
 {
     public class PostDetailsViewModel
     {

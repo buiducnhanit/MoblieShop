@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using WebDoDienTu.Models;
-using WebDoDienTu.Service;
+using MoblieShop.Models;
+using MoblieShop.Service;
 
-namespace WebDoDienTu.Areas.Identity.Pages.Account.Manage
+namespace MoblieShop.Areas.Identity.Pages.Account.Manage
 {
     public class OrderHistoryModel : PageModel
     {

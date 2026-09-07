@@ -1,6 +1,6 @@
-﻿using WebDoDienTu.Models;
+using MoblieShop.Models;
 
-namespace WebDoDienTu.Service
+namespace MoblieShop.Interface
 {
     public interface IOrderService
     {

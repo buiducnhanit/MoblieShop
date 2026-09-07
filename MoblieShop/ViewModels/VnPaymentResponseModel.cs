@@ -1,4 +1,4 @@
-﻿namespace WebDoDienTu.ViewModels
+namespace MoblieShop.ViewModels
 {
     public class VnPaymentResponseModel
     {
