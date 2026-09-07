@@ -28,7 +28,6 @@ on:
 env:
   DOTNET_VERSION: 8.x
   PROJECT_PATH: MoblieShop/MoblieShop.csproj
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 jobs:
   ci:
@@ -85,6 +84,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push immutable image
         uses: docker/build-push-action@v6
         with:
@@ -92,8 +95,8 @@ jobs:
           file: ./MoblieShop/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:dev
+            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
+            ${{ steps.image.outputs.name }}:dev
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -116,9 +119,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Promote image without rebuilding
         shell: bash
         env:
+          IMAGE_NAME: ${{ steps.image.outputs.name }}
           SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           set -euo pipefail
@@ -144,9 +152,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - name: Promote staging image without rebuilding
         shell: bash
         env:
+          IMAGE_NAME: ${{ steps.image.outputs.name }}
           SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           set -euo pipefail
