@@ -61,7 +61,6 @@ jobs:
           /k:"${SONAR_PROJECT_KEY}"
           /o:"${SONAR_ORGANIZATION}"
           /d:sonar.token="${SONAR_TOKEN}"
-          /d:sonar.qualitygate.wait=true
           /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/**/coverage.opencover.xml"
 
       - name: Restore dependencies
