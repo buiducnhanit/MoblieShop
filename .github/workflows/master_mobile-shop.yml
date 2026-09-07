@@ -13,25 +13,28 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
     inputs:
-      promote_to:
-        description: 'Environment to promote the existing image to'
+      action:
+        description: 'Promotion or rollback action'
         required: true
         type: choice
         options:
-          - staging
-          - production
+          - promote-staging
+          - promote-production
+          - rollback-production
       source_tag:
-        description: 'Existing GHCR tag to promote (for example sha-<commit> or stag)'
+        description: 'Existing GHCR tag, for example sha-<commit>, stag, or previous-prod'
         required: true
         type: string
 
 env:
   DOTNET_VERSION: 8.x
   PROJECT_PATH: MoblieShop/MoblieShop.csproj
+  SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+  SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
 
 jobs:
   ci:
-    name: Build and test
+    name: Lint, test, build and quality gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -39,25 +42,56 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Install SonarScanner for .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Begin Sonar analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >-
+          dotnet-sonarscanner begin
+          /k:"${SONAR_PROJECT_KEY}"
+          /o:"${SONAR_ORGANIZATION}"
+          /d:sonar.token="${SONAR_TOKEN}"
+          /d:sonar.qualitygate.wait=true
+          /d:sonar.cs.opencover.reportsPaths="${{ github.workspace }}/**/coverage.opencover.xml"
+
       - name: Restore dependencies
         run: dotnet restore "${{ env.PROJECT_PATH }}"
+
+      - name: Lint and format check
+        continue-on-error: ${{ vars.LINT_STRICT != 'true' }}
+        run: dotnet format "${{ env.PROJECT_PATH }}" --verify-no-changes --no-restore
 
       - name: Build
         run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test "${{ env.PROJECT_PATH }}" --configuration Release --no-build --no-restore
+      - name: Unit tests with coverage
+        run: >-
+          dotnet test "${{ env.PROJECT_PATH }}"
+          --configuration Release
+          --no-build
+          --no-restore
+          --collect:"XPlat Code Coverage"
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
 
-      - name: Publish application
+      - name: Publish deployable application
         run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish --no-restore
 
-      - name: Upload publish artifact
+      - name: End Sonar analysis and enforce quality gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
+      - name: Upload application artifact
         uses: actions/upload-artifact@v4
         with:
           name: mobileshop-publish-${{ github.sha }}
@@ -65,7 +99,7 @@ jobs:
           if-no-files-found: error
 
   build-dev-artifact:
-    name: Build immutable dev artifact
+    name: Build immutable artifact once
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     needs: ci
     runs-on: ubuntu-latest
@@ -86,6 +120,7 @@ jobs:
 
       - name: Normalize image name
         id: image
+        shell: bash
         run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push immutable image
@@ -101,9 +136,47 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
 
+  deploy-dev:
+    name: Deploy exact artifact to dev
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    needs: build-dev-artifact
+    runs-on: ubuntu-latest
+    environment: development
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run dev artifact and integration smoke test
+        shell: bash
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
+          DEV_CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+        run: |
+          set -euo pipefail
+          docker pull "${IMAGE_NAME}:sha-${GITHUB_SHA}"
+          docker run -d --rm --name mobileshop-dev -p 5122:5122 \
+            -e "ConnectionStrings__DefaultConnection=${DEV_CONNECTION_STRING}" \
+            "${IMAGE_NAME}:sha-${GITHUB_SHA}"
+          trap 'docker stop mobileshop-dev >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5122/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo 'Dev smoke test failed'
+          docker logs mobileshop-dev
+          exit 1
+
   promote-staging:
-    name: Promote exact artifact to staging
-    if: github.event_name == 'workflow_dispatch' && inputs.promote_to == 'staging'
+    name: Approve and promote exact artifact to staging
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'promote-staging'
     needs: ci
     runs-on: ubuntu-latest
     environment: staging
@@ -112,32 +185,38 @@ jobs:
       packages: write
 
     steps:
-      - name: Login to GHCR
+      - name: Promote after staging approval without rebuilding
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Normalize image name
-        id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-
-      - name: Promote image without rebuilding
+      - name: Run staging smoke and E2E tests
         shell: bash
         env:
-          IMAGE_NAME: ${{ steps.image.outputs.name }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
           SOURCE_TAG: ${{ inputs.source_tag }}
+          STAGING_CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
         run: |
           set -euo pipefail
-          source_image="${IMAGE_NAME}:${SOURCE_TAG}"
-          docker pull "$source_image"
-          docker tag "$source_image" "${IMAGE_NAME}:stag"
+          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
+          docker run -d --rm --name mobileshop-staging -p 5123:5122 \
+            -e "ConnectionStrings__DefaultConnection=${STAGING_CONNECTION_STRING}" \
+            "${IMAGE_NAME}:${SOURCE_TAG}"
+          trap 'docker stop mobileshop-staging >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5123/ >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent --show-error http://127.0.0.1:5123/ >/dev/null
+          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:stag"
           docker push "${IMAGE_NAME}:stag"
 
   promote-production:
-    name: Promote exact staging artifact to production
-    if: github.event_name == 'workflow_dispatch' && inputs.promote_to == 'production'
+    name: Canary and promote exact artifact to production
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'promote-production'
+    needs: ci
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -145,27 +224,54 @@ jobs:
       packages: write
 
     steps:
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Normalize image name
-        id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-
-      - name: Promote staging image without rebuilding
+      - name: Canary check and promote without rebuilding
         shell: bash
         env:
-          IMAGE_NAME: ${{ steps.image.outputs.name }}
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          PRODUCTION_HEALTH_URL: ${{ secrets.HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          echo "Canary validation for ${IMAGE_NAME}:${SOURCE_TAG}"
+          test -n "${PRODUCTION_HEALTH_URL}" || { echo 'HEALTH_URL is required'; exit 1; }
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
+          failures=0
+          for attempt in {1..20}; do
+            if ! curl --fail --silent --show-error --max-time 10 "${PRODUCTION_HEALTH_URL}" >/dev/null; then
+              failures=$((failures + 1))
+            fi
+          done
+          if [ "$failures" -gt 2 ]; then
+            echo "Canary halted: ${failures}/20 health checks failed"
+            exit 1
+          fi
+          echo "Canary passed: ${failures}/20 health checks failed"
+          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:prod"
+          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
+          docker push "${IMAGE_NAME}:prod"
+          docker push "${IMAGE_NAME}:latest"
+
+  rollback-production:
+    name: Roll back production to exact artifact
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback-production'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Roll back without rebuilding
+        shell: bash
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
           SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           set -euo pipefail
-          source_image="${IMAGE_NAME}:${SOURCE_TAG}"
-          docker pull "$source_image"
-          docker tag "$source_image" "${IMAGE_NAME}:prod"
-          docker tag "$source_image" "${IMAGE_NAME}:latest"
+          docker login ghcr.io -u "${GITHUB_ACTOR}" -p "${{ secrets.GITHUB_TOKEN }}"
+          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
+          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:prod"
+          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:prod"
           docker push "${IMAGE_NAME}:latest"
