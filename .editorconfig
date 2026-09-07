@@ -1,4 +1,7 @@
-﻿[*.cs]
+root = true
 
-# IDE0320: Make anonymous function static
-csharp_prefer_static_anonymous_function = false
+[*.cs]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
