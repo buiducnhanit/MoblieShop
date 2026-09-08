@@ -39,7 +39,7 @@ namespace MoblieShop.Areas.Admin.Controllers
         }
 
         public IActionResult Create()
-        {          
+        {
             return View();
         }
 
@@ -273,8 +273,8 @@ namespace MoblieShop.Areas.Admin.Controllers
             var user = await _context.Users.FindAsync(userId);
             if (user != null)
             {
-                user.IsBlocked = false; 
-                _context.Users.Update(user); 
+                user.IsBlocked = false;
+                _context.Users.Update(user);
                 _context.SaveChanges();
 
                 return RedirectToAction("Index", "Users");

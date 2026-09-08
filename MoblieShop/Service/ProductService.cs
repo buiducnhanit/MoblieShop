@@ -10,14 +10,12 @@ namespace MoblieShop.Service
     public class ProductService : IProductService
     {
         private readonly IProductRepository _productRepository;
-        private readonly ICategoryRepository _categoryRepository;
         private readonly ICloudinary _cloudinary;
         private readonly IMapper _mapper;
 
-        public ProductService(IProductRepository productRepository, ICategoryRepository categoryRepository, ICloudinary cloudinary, IMapper mapper)
+        public ProductService(IProductRepository productRepository, ICloudinary cloudinary, IMapper mapper)
         {
             _productRepository = productRepository;
-            _categoryRepository = categoryRepository;
             _cloudinary = cloudinary;
             _mapper = mapper;
         }
