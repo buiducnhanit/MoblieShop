@@ -145,6 +145,15 @@ jobs:
       contents: read
       packages: read
 
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+
     steps:
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -153,23 +162,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Wait for SQL Server to be ready
+        shell: bash
+        run: |
+          echo "Waiting for SQL Server to initialize..."
+          sleep 15
+
       - name: Run dev artifact and integration smoke test
         shell: bash
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
-          DEV_CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+          TEST_CONN_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
         run: |
           set -euo pipefail
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           docker pull "${IMAGE_NAME}:sha-${GITHUB_SHA}"
-          docker run -d --rm --name mobileshop-dev -p 5122:5122 \
-            -e "ConnectionStrings__DefaultConnection=${DEV_CONNECTION_STRING}" \
+          
+          docker run -d --name mobileshop-dev -p 5122:5122 \
+            -e "ConnectionStrings__DefaultConnection=${TEST_CONN_STRING}" \
             "${IMAGE_NAME}:sha-${GITHUB_SHA}"
-          trap 'docker stop mobileshop-dev >/dev/null 2>&1 || true' EXIT
+            
+          trap 'docker rm -f mobileshop-dev >/dev/null 2>&1 || true' EXIT
+          
+          echo "Waiting for container to accept connections..."
           for attempt in {1..30}; do
-            if curl --fail --silent --show-error http://127.0.0.1:5122/ >/dev/null; then exit 0; fi
+            if curl --fail --silent http://127.0.0.1:5122/ >/dev/null 2>&1; then
+              echo "Smoke test passed successfully."
+              exit 0
+            fi
             sleep 2
           done
-          echo 'Dev smoke test failed'
+          
+          echo 'Dev smoke test failed. Application logs:'
           docker logs mobileshop-dev
           exit 1
 
@@ -194,21 +217,29 @@ jobs:
       - name: Run staging smoke and E2E tests
         shell: bash
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
           SOURCE_TAG: ${{ inputs.source_tag }}
           STAGING_CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
         run: |
           set -euo pipefail
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
-          docker run -d --rm --name mobileshop-staging -p 5123:5122 \
+          
+          docker run -d --name mobileshop-staging -p 5123:8080 \
             -e "ConnectionStrings__DefaultConnection=${STAGING_CONNECTION_STRING}" \
+            -e "ASPNETCORE_HTTP_PORTS=8080" \
             "${IMAGE_NAME}:${SOURCE_TAG}"
-          trap 'docker stop mobileshop-staging >/dev/null 2>&1 || true' EXIT
+            
+          trap 'docker rm -f mobileshop-staging >/dev/null 2>&1 || true' EXIT
+          
+          echo "Waiting for staging container to accept connections..."
           for attempt in {1..30}; do
-            if curl --fail --silent --show-error http://127.0.0.1:5123/ >/dev/null; then break; fi
+            if curl --fail --silent http://127.0.0.1:5123/ >/dev/null 2>&1; then
+              echo "Staging smoke test passed successfully."
+              break
+            fi
             sleep 2
           done
-          curl --fail --silent --show-error http://127.0.0.1:5123/ >/dev/null
+          
           docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:stag"
           docker push "${IMAGE_NAME}:stag"
 
@@ -226,11 +257,11 @@ jobs:
       - name: Canary check and promote without rebuilding
         shell: bash
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
           SOURCE_TAG: ${{ inputs.source_tag }}
           PRODUCTION_HEALTH_URL: ${{ secrets.HEALTH_URL }}
         run: |
           set -euo pipefail
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           echo "Canary validation for ${IMAGE_NAME}:${SOURCE_TAG}"
           test -n "${PRODUCTION_HEALTH_URL}" || { echo 'HEALTH_URL is required'; exit 1; }
           printf '%s' "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
@@ -264,10 +295,10 @@ jobs:
       - name: Roll back without rebuilding
         shell: bash
         env:
-          IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mobileshop
           SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           set -euo pipefail
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           docker login ghcr.io -u "${GITHUB_ACTOR}" -p "${{ secrets.GITHUB_TOKEN }}"
           docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
           docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:prod"
