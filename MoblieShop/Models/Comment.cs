@@ -14,9 +14,9 @@ namespace MoblieShop.Models
         public DateTime CreatedAt { get; set; }
 
         public string AuthorId { get; set; }
-        public int PostId { get; set; } 
+        public int PostId { get; set; }
 
-        public virtual ApplicationUser Author { get; set; } 
-        public virtual Post Post { get; set; } 
+        public virtual ApplicationUser Author { get; set; }
+        public virtual Post Post { get; set; }
     }
 }

@@ -18,8 +18,8 @@ namespace MoblieShop.Models
         [DisplayName("Mã người dùng")]
         public string? UserId { get; set; }
 
-        [Required]  
-        [StringLength(1000)]  
+        [Required]
+        [StringLength(1000)]
         [DisplayName("Mô tả khiếu nại")]
         public string ComplaintDescription { get; set; } = string.Empty;
 

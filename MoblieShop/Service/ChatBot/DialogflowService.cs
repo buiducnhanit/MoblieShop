@@ -25,7 +25,7 @@ namespace MoblieShop.Service.ChatBot
                 Text = new TextInput
                 {
                     Text = text,
-                    LanguageCode = "vi" 
+                    LanguageCode = "vi"
                 }
             };
 

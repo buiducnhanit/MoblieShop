@@ -4,8 +4,8 @@ namespace MoblieShop.Models
 {
     public class ProductRecommendationModel
     {
-        public string UserId { get; set; } 
-        public int ProductId { get; set; } 
+        public string UserId { get; set; }
+        public int ProductId { get; set; }
         public float Label { get; set; }
         public string ProductName { get; set; }
         public string Description { get; set; }

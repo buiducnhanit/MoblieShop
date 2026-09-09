@@ -26,7 +26,7 @@ namespace MoblieShop.Models
         public string AttributeValue { get; set; } = String.Empty;
 
 
-        [JsonIgnore] 
+        [JsonIgnore]
         public virtual Product? Product { get; set; }
     }
 }

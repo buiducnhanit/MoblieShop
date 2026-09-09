@@ -82,7 +82,7 @@ namespace MoblieShop.Data
                 .HasMany(p => p.Comments)
                 .WithOne(c => c.Post)
                 .HasForeignKey(c => c.PostId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PostCategory>()
                 .HasMany(c => c.Posts)
@@ -93,7 +93,7 @@ namespace MoblieShop.Data
             modelBuilder.Entity<Product>()
                 .HasMany(p => p.Attributes)
                 .WithOne(a => a.Product)
-                .HasForeignKey(a => a.ProductId);         
+                .HasForeignKey(a => a.ProductId);
         }
     }
 }

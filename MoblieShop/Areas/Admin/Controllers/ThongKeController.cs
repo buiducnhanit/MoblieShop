@@ -32,7 +32,7 @@ namespace MoblieShop.Areas.Admin.Controllers
                                 Month = g.Key.Month,
                                 Revenue = g.Sum(o => o.TotalPrice)
                             })
-                            .ToListAsync(); 
+                            .ToListAsync();
 
             var revenueByMonth = new Dictionary<int, decimal>();
             for (int i = 1; i <= 12; i++)

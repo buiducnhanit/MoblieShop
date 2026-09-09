@@ -50,7 +50,7 @@ namespace MoblieShop.Areas.Admin.Controllers
                                 .FirstOrDefault();
             var soLuongUser = _context.Users
                                 .Where(user => !_context.UserRoles
-                                .Where(role => role.RoleId == adminRoleId) 
+                                .Where(role => role.RoleId == adminRoleId)
                                 .Select(role => role.UserId)
                                 .Contains(user.Id))
                                 .Count();

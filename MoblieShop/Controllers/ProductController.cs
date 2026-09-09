@@ -22,7 +22,7 @@ namespace MoblieShop.Controllers
         private readonly RecommendationService _recommendationService;
         private readonly ProductRecommendationService _productRecommendationService;
 
-        public ProductController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IProductViewService productViewService, 
+        public ProductController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IProductViewService productViewService,
             RecommendationService recommendationService, ProductRecommendationService productRecommendationService)
         {
             _context = context;
@@ -102,7 +102,7 @@ namespace MoblieShop.Controllers
             }
 
             var product = _context.Products.Include(p => p.Reviews).Include(x => x.Category).Include(x => x.Images).Include(p => p.Attributes).FirstOrDefault(x => x.ProductId == id);
-            
+
             if (product == null)
             {
                 return NotFound();
@@ -114,7 +114,7 @@ namespace MoblieShop.Controllers
 
             var recommendations = await _recommendationService.GetProductRecommendations(user.Id);
             ViewBag.Recommendations = recommendations;
-            ViewBag.AverageRating = (product?.Reviews != null && product.Reviews.Any())  ? product.Reviews.Average(x => x.Rating) : 0; 
+            ViewBag.AverageRating = (product?.Reviews != null && product.Reviews.Any()) ? product.Reviews.Average(x => x.Rating) : 0;
 
             return View(product);
         }
@@ -144,7 +144,7 @@ namespace MoblieShop.Controllers
             return RedirectToAction("Compare");
         }
 
-        public async Task <IActionResult> Compare()
+        public async Task<IActionResult> Compare()
         {
             var comparisonList = HttpContext.Session.GetObjectFromJson<List<Product>>("ComparisonList") ?? new List<Product>();
 

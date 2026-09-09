@@ -27,11 +27,11 @@ namespace MoblieShop.Controllers
         private readonly IMomoPaymentService _momoPaymentService;
         private readonly IConfiguration _configuration;
         private readonly IEmailSender _emailSender;
-        private static Promotion ?promotion;
+        private static Promotion? promotion;
         private static Order orderTemp = new Order();
         private readonly IPayPalPaymentService _payPalPaymentService;
 
-        public CartController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IProductRepository productRepository, IVnPayService vnPayService, IMomoPaymentService momoPaymentService, 
+        public CartController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IProductRepository productRepository, IVnPayService vnPayService, IMomoPaymentService momoPaymentService,
             IConfiguration configuration, IEmailSender emailSender, IPayPalPaymentService payPalPaymentService)
         {
             _productRepository = productRepository;
@@ -260,7 +260,7 @@ namespace MoblieShop.Controllers
                         }
                     }
 
-                    await _context.SaveChangesAsync();            
+                    await _context.SaveChangesAsync();
 
                     BackgroundJob.Enqueue(() => SendOrderConfirmationEmail(order));
                 }
@@ -279,7 +279,7 @@ namespace MoblieShop.Controllers
 
         public async Task SendOrderConfirmationEmail(Order order)
         {
-            var o =  _context.Orders.Include(o => o.OrderDetails).ThenInclude(p => p.Product).FirstOrDefault(o => o.Id == order.Id);
+            var o = _context.Orders.Include(o => o.OrderDetails).ThenInclude(p => p.Product).FirstOrDefault(o => o.Id == order.Id);
 
             // Load the email template
             var emailTemplatePath = "Templates/OrderConfirm/OrderConfirmationTemplate.html";
@@ -321,7 +321,7 @@ namespace MoblieShop.Controllers
                 ProductPrice = product.Price,
             };
             ViewBag.Product = product;
-            return View("PreOrderForm", viewModel); 
+            return View("PreOrderForm", viewModel);
         }
 
         [HttpPost]
@@ -413,7 +413,7 @@ namespace MoblieShop.Controllers
 
             var settings = new JsonSerializerSettings
             {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore 
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
             var orderJson = JsonConvert.SerializeObject(order, settings);
 
@@ -471,7 +471,7 @@ namespace MoblieShop.Controllers
             var remainingAmount = order.TotalPrice - order.DepositAmount;
             ViewBag.RemainingAmount = remainingAmount;
 
-            return View(order); 
+            return View(order);
         }
 
         [HttpPost]

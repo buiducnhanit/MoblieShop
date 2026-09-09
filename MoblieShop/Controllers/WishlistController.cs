@@ -30,7 +30,8 @@ namespace MoblieShop.Controllers
             var wishList = await _context.WishLists
                                             .Include(w => w.WishListItems)
                                             .FirstOrDefaultAsync(w => w.UserId == user.Id);
-            if (wishList.WishListItems.Count == 0) {
+            if (wishList.WishListItems.Count == 0)
+            {
                 TempData["Message"] = _localizer["WishlistEmptyMessage"];
                 return View("Index");
             }

@@ -73,7 +73,7 @@ namespace MoblieShop.Models
         public ApplicationUser? ApplicationUser { get; set; }
 
         [JsonIgnore]
-        public List<OrderDetail>? OrderDetails { get; set; }     
+        public List<OrderDetail>? OrderDetails { get; set; }
 
         public Promotion? Promotion { get; set; }
 

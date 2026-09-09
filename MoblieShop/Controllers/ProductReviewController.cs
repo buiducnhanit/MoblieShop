@@ -18,7 +18,7 @@ namespace MoblieShop.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddReview(int productId,string name, string email, int rating, string comment)
+        public async Task<IActionResult> AddReview(int productId, string name, string email, int rating, string comment)
         {
             var user = await _userManager.GetUserAsync(User);
             if (!User.Identity.IsAuthenticated)

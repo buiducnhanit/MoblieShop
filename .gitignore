@@ -206,7 +206,10 @@ PublishScripts/
 !.env.development.example
 !.env.staging.example
 !.env.production.example
+appsettings.json
 secrets.json
+.secrets
+.vars
 *.pfx
 *.pem
 # except build/, which is used as an MSBuild target.
@@ -412,3 +415,4 @@ publish/
 *.bak
 *.swp
 *.tmp
+

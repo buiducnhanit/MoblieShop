@@ -53,7 +53,7 @@ namespace MoblieShop.Models
         public virtual ApplicationUser? Author { get; set; }
         public virtual PostCategory? Category { get; set; }
         public virtual ICollection<Comment>? Comments { get; set; }
-        public virtual ICollection<ActionPost>? ActionPosts {  get; set; }    
+        public virtual ICollection<ActionPost>? ActionPosts { get; set; }
     }
 
 }

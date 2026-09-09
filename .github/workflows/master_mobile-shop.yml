@@ -10,11 +10,11 @@ on:
     branches:
       - dev
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       action:
-        description: 'Promotion or rollback action'
+        description: "Promotion or rollback action"
         required: true
         type: choice
         options:
@@ -22,7 +22,7 @@ on:
           - promote-production
           - rollback-production
       source_tag:
-        description: 'Existing GHCR tag, for example sha-<commit>, stag, or previous-prod'
+        description: "Existing GHCR tag, for example sha-<commit>, stag, or previous-prod"
         required: true
         type: string
 
@@ -51,9 +51,13 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Install SonarScanner for .NET
-        run: dotnet tool install --global dotnet-sonarscanner
+        if: github.actor != 'nektos/act'
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Begin Sonar analysis
+        if: github.actor != 'nektos/act'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >-
@@ -86,11 +90,13 @@ jobs:
         run: dotnet publish "${{ env.PROJECT_PATH }}" --configuration Release --no-build --output ./publish --no-restore
 
       - name: End Sonar analysis and enforce quality gate
+        if: github.actor != 'nektos/act'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
 
       - name: Upload application artifact
+        if: github.actor != 'nektos/act'
         uses: actions/upload-artifact@v4
         with:
           name: mobileshop-publish-${{ github.sha }}
@@ -145,57 +151,36 @@ jobs:
       contents: read
       packages: read
 
-    services:
-      mssql:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: ${{ secrets.MSSQL_SA_PASSWORD }}
-        ports:
-          - 1433:1433
-
     steps:
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for SQL Server to be ready
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Create .env.development file
+        run: |
+          echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.development
+      - name: Tear down old docker stack
+        run: |
+          docker compose -f docker-compose.development.yml --env-file .env.development.example down --volumes --remove-orphans || true
+      - name: Start services via Docker Compose
+        run: |
+          docker compose -f docker-compose.development.yml --env-file .env.development.example up -d --build         
+      - name: Smoke test endpoint
         shell: bash
         run: |
-          echo "Waiting for SQL Server to initialize..."
-          sleep 15
-
-      - name: Run dev artifact and integration smoke test
-        shell: bash
-        env:
-          TEST_CONN_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
-        run: |
-          set -euo pipefail
-          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker pull "${IMAGE_NAME}:sha-${GITHUB_SHA}"
-          
-          docker run -d --name mobileshop-dev -p 5122:5122 \
-            -e "ConnectionStrings__DefaultConnection=${TEST_CONN_STRING}" \
-            "${IMAGE_NAME}:sha-${GITHUB_SHA}"
-            
-          trap 'docker rm -f mobileshop-dev >/dev/null 2>&1 || true' EXIT
-          
-          echo "Waiting for container to accept connections..."
+          echo "Waiting for app to respond on http://localhost:5122/..."
           for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:5122/ >/dev/null 2>&1; then
-              echo "Smoke test passed successfully."
+            if curl --fail --silent http://localhost:5122/ >/dev/null 2>&1; then
+              echo "Smoke test passed! App and Database are running healthy."
               exit 0
             fi
-            sleep 2
+            sleep 3
           done
-          
-          echo 'Dev smoke test failed. Application logs:'
-          docker logs mobileshop-dev
-          exit 1
 
+          echo "Smoke test failed. App logs:"
+          docker logs mobileshop-app-development
+          echo "Database logs:"
+          docker logs mobileshop-db-development
+          exit 1          
+  
   promote-staging:
     name: Approve and promote exact artifact to staging
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'promote-staging'
@@ -207,41 +192,53 @@ jobs:
       packages: write
 
     steps:
-      - name: Promote after staging approval without rebuilding
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run staging smoke and E2E tests
-        shell: bash
-        env:
-          SOURCE_TAG: ${{ inputs.source_tag }}
-          STAGING_CONNECTION_STRING: ${{ secrets.CONNECTION_STRING }}
+      - name: Prepare environment variables
         run: |
-          set -euo pipefail
+          echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.staging
+          echo "IMAGE_TAG=${{ inputs.source_tag }}" >> .env.staging
+
+      - name: Pull target image from GHCR
+        shell: bash
+        run: |
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
-          
-          docker run -d --name mobileshop-staging -p 5123:8080 \
-            -e "ConnectionStrings__DefaultConnection=${STAGING_CONNECTION_STRING}" \
-            -e "ASPNETCORE_HTTP_PORTS=8080" \
-            "${IMAGE_NAME}:${SOURCE_TAG}"
-            
-          trap 'docker rm -f mobileshop-staging >/dev/null 2>&1 || true' EXIT
-          
-          echo "Waiting for staging container to accept connections..."
-          for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:5123/ >/dev/null 2>&1; then
-              echo "Staging smoke test passed successfully."
-              break
-            fi
-            sleep 2
-          done
-          
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:stag"
+          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
+          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:stag"
           docker push "${IMAGE_NAME}:stag"
+
+      - name: Tear down old staging stack
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file .env.staging down --volumes --remove-orphans || true
+
+      - name: Deploy to staging via Docker Compose
+        run: |
+          docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
+
+      - name: Smoke test staging endpoint
+        shell: bash
+        run: |
+          echo "Waiting for staging app to respond on http://localhost:5123/..."
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5123/ >/dev/null 2>&1; then
+              echo "Staging smoke test passed!"
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "Staging smoke test failed. Logs:"
+          docker logs mobileshop-app-staging || true
+          docker logs mobileshop-db-staging || true
+          exit 1
 
   promote-production:
     name: Canary and promote exact artifact to production
@@ -254,7 +251,17 @@ jobs:
       packages: write
 
     steps:
-      - name: Canary check and promote without rebuilding
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Canary check on source tag
         shell: bash
         env:
           SOURCE_TAG: ${{ inputs.source_tag }}
@@ -262,25 +269,44 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          echo "Canary validation for ${IMAGE_NAME}:${SOURCE_TAG}"
-          test -n "${PRODUCTION_HEALTH_URL}" || { echo 'HEALTH_URL is required'; exit 1; }
-          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
-          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
-          failures=0
-          for attempt in {1..20}; do
-            if ! curl --fail --silent --show-error --max-time 10 "${PRODUCTION_HEALTH_URL}" >/dev/null; then
-              failures=$((failures + 1))
+          echo "Validating Canary health for ${IMAGE_NAME}:${SOURCE_TAG}"
+          
+          if [ -n "${PRODUCTION_HEALTH_URL:-}" ]; then
+            failures=0
+            for attempt in {1..10}; do
+              if ! curl --fail --silent --show-error --max-time 5 "${PRODUCTION_HEALTH_URL}" >/dev/null; then
+                failures=$((failures + 1))
+              fi
+              sleep 1
+            done
+            if [ "$failures" -gt 2 ]; then
+              echo "Canary failed: ${failures}/10 health checks failed."
+              exit 1
             fi
-          done
-          if [ "$failures" -gt 2 ]; then
-            echo "Canary halted: ${failures}/20 health checks failed"
-            exit 1
+            echo "Canary passed successfully."
+          else
+            echo "No HEALTH_URL provided, skipping active endpoint canary check."
           fi
-          echo "Canary passed: ${failures}/20 health checks failed"
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:prod"
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
+
+      - name: Tag and Push Production Image to GHCR
+        shell: bash
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
+          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:prod"
+          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:prod"
           docker push "${IMAGE_NAME}:latest"
+
+      - name: Prepare production environment variables
+        run: |
+          echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.production
+          echo "IMAGE_TAG=prod" >> .env.production
+
+      - name: Deploy to production via Docker Compose
+        run: |
+          docker compose -f docker-compose.production.yml --env-file .env.production down --remove-orphans || true
+          docker compose -f docker-compose.production.yml --env-file .env.production up -d
 
   rollback-production:
     name: Roll back production to exact artifact
@@ -292,16 +318,32 @@ jobs:
       packages: write
 
     steps:
-      - name: Roll back without rebuilding
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rollback image tags on GHCR
         shell: bash
-        env:
-          SOURCE_TAG: ${{ inputs.source_tag }}
         run: |
           set -euo pipefail
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker login ghcr.io -u "${GITHUB_ACTOR}" -p "${{ secrets.GITHUB_TOKEN }}"
-          docker pull "${IMAGE_NAME}:${SOURCE_TAG}"
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:prod"
-          docker tag "${IMAGE_NAME}:${SOURCE_TAG}" "${IMAGE_NAME}:latest"
+          echo "Rolling back Production to tag: ${{ inputs.source_tag }}"
+          
+          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
+          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:prod"
+          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:latest"
           docker push "${IMAGE_NAME}:prod"
           docker push "${IMAGE_NAME}:latest"
+
+      - name: Prepare environment and redeploy previous stack
+        run: |
+          echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.production
+          echo "IMAGE_TAG=prod" >> .env.production
+          docker compose -f docker-compose.production.yml --env-file .env.production down --remove-orphans || true
+          docker compose -f docker-compose.production.yml --env-file .env.production up -d

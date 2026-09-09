@@ -82,7 +82,7 @@ namespace MoblieShop.Areas.Identity.Pages.Account.Manage
             var LastName = user.LastName;
             var Address = user.Address;
             var Age = user.Age;
-            
+
 
             Input = new InputModel
             {

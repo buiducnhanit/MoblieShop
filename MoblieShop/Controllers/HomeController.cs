@@ -11,14 +11,14 @@ namespace MoblieShop.Controllers
         public HomeController(IProductRepository productRepository, ICategoryRepository categoryRepository)
         {
             _productRepository = productRepository;
-            _categoryRepository = categoryRepository;   
+            _categoryRepository = categoryRepository;
         }
 
         public async Task<IActionResult> Index()
         {
             var products = await _productRepository.GetAllAsync();
 
-            foreach(var pro in products)
+            foreach (var pro in products)
             {
                 if (pro.ReleaseDate > DateTime.UtcNow)
                 {
@@ -26,8 +26,8 @@ namespace MoblieShop.Controllers
                 }
             }
 
-            ViewData["Categories"] = await _categoryRepository.GetAllAsync();        
+            ViewData["Categories"] = await _categoryRepository.GetAllAsync();
             return View(products);
-        } 
+        }
     }
 }

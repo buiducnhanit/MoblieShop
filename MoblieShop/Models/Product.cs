@@ -31,7 +31,7 @@ namespace MoblieShop.Models
 
         [DisplayName("Video")]
         public string? VideoUrl { get; set; }
-        
+
         [DisplayName("Ảnh khác")]
         public List<ProductImage>? Images { get; set; }
 

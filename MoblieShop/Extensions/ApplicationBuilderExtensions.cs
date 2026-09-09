@@ -163,8 +163,10 @@ namespace MoblieShop.Extensions
                     context.Response.Cookies.Append(CookieRequestCultureProvider.DefaultCookieName,
                         CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)), new CookieOptions
                         {
-                            Expires = DateTimeOffset.UtcNow.AddYears(1), HttpOnly = true,
-                            SameSite = SameSiteMode.Lax, Secure = context.Request.IsHttps
+                            Expires = DateTimeOffset.UtcNow.AddYears(1),
+                            HttpOnly = true,
+                            SameSite = SameSiteMode.Lax,
+                            Secure = context.Request.IsHttps
                         });
                 }
                 await next.Invoke();

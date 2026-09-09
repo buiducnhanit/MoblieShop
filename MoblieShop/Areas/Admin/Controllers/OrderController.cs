@@ -10,7 +10,7 @@ namespace MoblieShop.Areas.Admin.Controllers
     [Authorize(Roles = SD.Role_Admin)]
     public class OrderController : Controller
     {
-        private readonly ApplicationDbContext _context; 
+        private readonly ApplicationDbContext _context;
 
         public OrderController(ApplicationDbContext context)
         {
@@ -71,14 +71,14 @@ namespace MoblieShop.Areas.Admin.Controllers
 
         public IActionResult Edit(int id)
         {
-            var item = _context.Orders.Find(id);          
+            var item = _context.Orders.Find(id);
             return View(item);
         }
 
         [HttpPost]
         public IActionResult Edit(int id, Order order)
         {
-            if(id != order.Id)
+            if (id != order.Id)
             {
                 return NotFound();
             }

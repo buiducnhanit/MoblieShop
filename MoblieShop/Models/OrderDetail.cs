@@ -9,12 +9,12 @@ namespace MoblieShop.Models
         [Key]
         public int Id { get; set; }
 
-        [Required] 
+        [Required]
         [ForeignKey("Order")]
         [DisplayName("Mã đơn hàng")]
         public int OrderId { get; set; }
 
-        [Required] 
+        [Required]
         [ForeignKey("Product")]
         [DisplayName("Mã sản phẩm")]
         public int ProductId { get; set; }

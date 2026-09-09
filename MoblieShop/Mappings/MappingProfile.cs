@@ -9,9 +9,9 @@ namespace MoblieShop.Mappings
         public MappingProfile()
         {
             CreateMap<ProductCreateViewModel, Product>()
-                .ForMember(dest => dest.Images, opt => opt.Ignore()) 
-                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore()) 
-                .ForMember(dest => dest.VideoUrl, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Images, opt => opt.Ignore())
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+                .ForMember(dest => dest.VideoUrl, opt => opt.Ignore())
                 .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.Attributes));
 
 
@@ -30,9 +30,9 @@ namespace MoblieShop.Mappings
                     }).ToList()));
 
             CreateMap<ProductUpdateViewModel, Product>()
-                .ForMember(dest => dest.Images, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Images, opt => opt.Ignore())
                 .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
-                .ForMember(dest => dest.VideoUrl, opt => opt.Ignore()) 
+                .ForMember(dest => dest.VideoUrl, opt => opt.Ignore())
                 .ForMember(dest => dest.Attributes, opt => opt.MapFrom(src => src.Attributes));
         }
     }

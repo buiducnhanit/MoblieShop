@@ -22,7 +22,7 @@ namespace MoblieShop.Areas.Admin.Controllers
         public async Task<IActionResult> SendMessage([FromBody] string userMessage)
         {
             var user = await _userManager.GetUserAsync(User);
-            var sessionId = user.Id; 
+            var sessionId = user.Id;
             var response = await _dialogflowService.DetectIntentAsync(sessionId, userMessage);
             return Json(new { response });
         }

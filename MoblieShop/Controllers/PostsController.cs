@@ -66,7 +66,7 @@ namespace MoblieShop.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             await _postRepository.LikePostAsync(post, userId);
 
-            int totalLikes = post.ActionPosts.Count(ap => ap.Like); 
+            int totalLikes = post.ActionPosts.Count(ap => ap.Like);
             int totalDislikes = post.ActionPosts.Count(ap => ap.Dislike);
 
             await _hubContext.Clients.All.SendAsync("UpdateLikes", postId, totalLikes, totalDislikes);

@@ -55,7 +55,7 @@ namespace MoblieShop.Areas.Admin.Controllers
         }
 
         private string GenerateEmailContent(OrderComplaint complaint, string adminResponse)
-        {           
+        {
             string template = System.IO.File.ReadAllText("Templates/OrderComplaints/ResolveComplaintEmailTemplate.html");
             var user = _userManager.FindByIdAsync(complaint.UserId).Result;
             string fullName = user.LastName;
