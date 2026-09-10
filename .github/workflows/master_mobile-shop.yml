@@ -31,6 +31,7 @@ env:
   PROJECT_PATH: MoblieShop/MoblieShop.csproj
   SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
   SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/moblieshop
 
 jobs:
   ci:
@@ -110,23 +111,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Normalize image name
-        id: image
-        shell: bash
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push immutable image
         uses: docker/build-push-action@v6
@@ -135,8 +129,8 @@ jobs:
           file: ./MoblieShop/Dockerfile
           push: true
           tags: |
-            ${{ steps.image.outputs.name }}:sha-${{ github.sha }}
-            ${{ steps.image.outputs.name }}:dev
+            ${{ env.DOCKER_IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.DOCKER_IMAGE_NAME }}:dev
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
@@ -154,15 +148,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Create .env.development file
         run: |
           echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.development
+
       - name: Tear down old docker stack
         run: |
           docker compose -f docker-compose.development.yml --env-file .env.development.example down --volumes --remove-orphans || true
+
       - name: Start services via Docker Compose
         run: |
-          docker compose -f docker-compose.development.yml --env-file .env.development.example up -d --build         
+          docker compose -f docker-compose.development.yml --env-file .env.development.example up -d --build
+
       - name: Smoke test endpoint
         shell: bash
         run: |
@@ -179,8 +177,8 @@ jobs:
           docker logs mobileshop-app-development
           echo "Database logs:"
           docker logs mobileshop-db-development
-          exit 1          
-  
+          exit 1
+
   promote-staging:
     name: Approve and promote exact artifact to staging
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'promote-staging'
@@ -195,25 +193,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Prepare environment variables
         run: |
           echo "MSSQL_SA_PASSWORD=${{ secrets.MSSQL_SA_PASSWORD }}" > .env.staging
           echo "IMAGE_TAG=${{ inputs.source_tag }}" >> .env.staging
 
-      - name: Pull target image from GHCR
+      - name: Pull target image from Docker Hub
         shell: bash
         run: |
-          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
-          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:stag"
-          docker push "${IMAGE_NAME}:stag"
+          docker pull "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}"
+          docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}" "${{ env.DOCKER_IMAGE_NAME }}:stag"
+          docker push "${{ env.DOCKER_IMAGE_NAME }}:stag"
 
       - name: Tear down old staging stack
         run: |
@@ -254,12 +250,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Canary check on source tag
         shell: bash
@@ -269,8 +264,8 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          echo "Validating Canary health for ${IMAGE_NAME}:${SOURCE_TAG}"
-          
+          echo "Validating Canary health for ${{ env.DOCKER_IMAGE_NAME }}:${SOURCE_TAG}"
+
           if [ -n "${PRODUCTION_HEALTH_URL:-}" ]; then
             failures=0
             for attempt in {1..10}; do
@@ -288,15 +283,14 @@ jobs:
             echo "No HEALTH_URL provided, skipping active endpoint canary check."
           fi
 
-      - name: Tag and Push Production Image to GHCR
+      - name: Tag and Push Production Image to Docker Hub
         shell: bash
         run: |
-          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
-          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:prod"
-          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:latest"
-          docker push "${IMAGE_NAME}:prod"
-          docker push "${IMAGE_NAME}:latest"
+          docker pull "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}"
+          docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}" "${{ env.DOCKER_IMAGE_NAME }}:prod"
+          docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}" "${{ env.DOCKER_IMAGE_NAME }}:latest"
+          docker push "${{ env.DOCKER_IMAGE_NAME }}:prod"
+          docker push "${{ env.DOCKER_IMAGE_NAME }}:latest"
 
       - name: Prepare production environment variables
         run: |
@@ -315,31 +309,28 @@ jobs:
     environment: production
     permissions:
       contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to GHCR
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Rollback image tags on GHCR
+      - name: Rollback image tags on Docker Hub
         shell: bash
         run: |
           set -euo pipefail
-          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
           echo "Rolling back Production to tag: ${{ inputs.source_tag }}"
-          
-          docker pull "${IMAGE_NAME}:${{ inputs.source_tag }}"
-          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:prod"
-          docker tag "${IMAGE_NAME}:${{ inputs.source_tag }}" "${IMAGE_NAME}:latest"
-          docker push "${IMAGE_NAME}:prod"
-          docker push "${IMAGE_NAME}:latest"
+
+          docker pull "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}"
+          docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}" "${{ env.DOCKER_IMAGE_NAME }}:prod"
+          docker tag "${{ env.DOCKER_IMAGE_NAME }}:${{ inputs.source_tag }}" "${{ env.DOCKER_IMAGE_NAME }}:latest"
+          docker push "${{ env.DOCKER_IMAGE_NAME }}:prod"
+          docker push "${{ env.DOCKER_IMAGE_NAME }}:latest"
 
       - name: Prepare environment and redeploy previous stack
         run: |
