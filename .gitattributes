@@ -62,7 +62,7 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 
-*.html linguist-vendored
 *.css linguist-vendored
+*.scss linguist-vendored
 
-*.js linguist-language=C#
+*.cs linguist-language=C#
